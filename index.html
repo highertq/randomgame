@@ -593,7 +593,7 @@
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         
-        /* 分享按钮样式 */
+        /* 分享按钮容器样式优化 */
         .share-container {
             background: rgba(30, 30, 50, 0.8);
             padding: 10px;
@@ -601,6 +601,31 @@
             backdrop-filter: blur(8px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 77, 0, 0.3);
+            position: fixed;
+            z-index: 10;
+        }
+        
+        /* 桌面端侧边栏位置 */
+        @media (min-width: 768px) {
+            .share-container {
+                left: 4px;
+                top: 50%;
+                transform: translateY(-50%);
+                flex-direction: column;
+                gap: 3px;
+            }
+        }
+        
+        /* 移动端底部位置 */
+        @media (max-width: 767px) {
+            .share-container {
+                left: 50%;
+                bottom: 15px;
+                top: auto;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 10px;
+            }
         }
         
         .share-btn {
@@ -694,6 +719,84 @@
             0%, 100% { transform: rotate(-1deg) translateY(0px); }
             50% { transform: rotate(-1deg) translateY(-5px); }
         }
+
+        /* 游戏容器自适应优化 */
+        @media (max-width: 767px) {
+            .game-container {
+                aspect-ratio: 16/9;
+                height: auto;
+                max-height: 75vh;
+                width: 100%;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            
+            .game-reveal {
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            iframe {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            /* 确保倒计时和压力表在移动设备上不遮挡内容 */
+            .countdown-container {
+                top: auto;
+                bottom: 70px;
+                right: 10px;
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .countdown-time {
+                font-size: 1.2rem;
+            }
+            
+            .stress-meter-container {
+                display: none; /* 在移动设备上隐藏压力表，节省空间 */
+            }
+            
+            /* 调整标题大小以适应移动设备 */
+            h1 {
+                font-size: 1.75rem !important;
+            }
+            
+            .header-subtitle {
+                font-size: 0.9rem !important;
+                line-height: 1.3;
+                padding: 0 10px;
+            }
+            
+            .slacker-motto {
+                font-size: 0.9rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            /* 调整内容卡片在移动设备上的边距 */
+            .content-card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        /* 解决iframe全屏问题 */
+        .game-reveal {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 比例 */
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .game-reveal iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -739,29 +842,49 @@
             </p>
         </header>
 
-        <!-- 简化分享按钮组件 -->
-        <div class="share-container fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-3 z-10">
+        <!-- 新的响应式分享容器 -->
+        <div class="share-container flex" id="shareButtons">
             <button class="share-btn copy-btn" aria-label="Copy Link" onclick="shareGame('copy')" title="Copy Link">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#6366F1"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/></svg>
             </button>
             <button class="share-btn bookmark-btn" aria-label="Add to Bookmarks" onclick="bookmarkGame()" title="Add to Bookmarks">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFC107"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
             </button>
+            <button class="share-btn feedback-btn" aria-label="Send Feedback" onclick="showFeedbackInfo()" title="Send Feedback">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#4ADE80">
+                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- 添加成功提示 -->
+        <!-- 新增反馈信息弹窗 -->
+        <div id="feedbackInfoModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex items-center justify-center z-50 opacity-0 invisible transition-all duration-300">
+            <div class="bg-opacity-90 bg-gray-900 p-6 rounded-xl border-l-4 border-orange-500 max-w-md mx-4 w-full">
+                <h3 class="text-xl font-bold mb-4 text-white">Send Feedback</h3>
+                <p class="mb-3 text-gray-100">Please send your feedback to the following email:</p>
+                <div class="bg-gray-800 p-3 rounded flex items-center justify-between mb-5">
+                    <span class="text-orange-400 font-medium select-all">mantq@qq.com</span>
+                    <button onclick="copyFeedbackEmail()" class="text-blue-400 hover:text-blue-300 text-sm">
+                        Copy
+                    </button>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="closeFeedbackInfo()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加邮箱复制成功提示 -->
         <div id="copyAlert" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg opacity-0 transition-opacity duration-300 z-50">
-            Link copied to clipboard!
-        </div>
-
-        <div id="bookmarkAlert" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg opacity-0 transition-opacity duration-300 z-50">
-            Press Ctrl+D to bookmark this page!
+            Website link copied to clipboard!
         </div>
 
         <main>
-            <div class="game-container relative mb-8">
-                <div class="game-reveal crt-effect w-full max-w-6xl aspect-video relative">
-                    <iframe id="gameFrame" class="w-full h-full rounded-lg shadow-2xl" allowfullscreen></iframe>
+            <div class="game-container relative mb-8 px-0">
+                <div class="game-reveal crt-effect w-full rounded-lg shadow-2xl relative">
+                    <iframe id="gameFrame" allowfullscreen allow="autoplay; fullscreen"></iframe>
                     
                     <div id="loadingAnimation" class="absolute inset-0 flex flex-col items-center justify-center bg-black">
                         <div class="text-4xl text-white mb-4">Loading...</div>
@@ -1005,6 +1128,108 @@
     </script>
 
     <script>
+        // 显示反馈信息弹窗
+        function showFeedbackInfo() {
+            const modal = document.getElementById('feedbackInfoModal');
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+        }
+        
+        // 关闭反馈信息弹窗
+        function closeFeedbackInfo() {
+            const modal = document.getElementById('feedbackInfoModal');
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+        }
+        
+        // 复制反馈邮箱
+        function copyFeedbackEmail() {
+            const emailText = 'mantq@qq.com';
+            
+            // 使用更可靠的复制方法
+            try {
+                // 现代浏览器方法
+                navigator.clipboard.writeText(emailText)
+                    .then(() => {
+                        showEmailCopiedSuccess();
+                    })
+                    .catch(err => {
+                        // 如果clipboard API失败，尝试备用方法
+                        fallbackCopy(emailText);
+                    });
+            } catch (err) {
+                // 对于不支持clipboard API的浏览器，使用备用方法
+                fallbackCopy(emailText);
+            }
+        }
+        
+        // 显示邮箱复制成功消息
+        function showEmailCopiedSuccess() {
+            const copiedAlert = document.getElementById('emailCopiedAlert');
+            copiedAlert.textContent = "Email address copied to clipboard!";
+            copiedAlert.style.opacity = '1';
+            setTimeout(() => {
+                copiedAlert.style.opacity = '0';
+            }, 2000);
+        }
+        
+        // 备用复制方法
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showEmailCopiedSuccess();
+            } catch (err) {
+                console.error('Copy failed', err);
+                alert('Copy failed. Please manually copy: mantq@qq.com');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // 点击弹窗外部关闭
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('feedbackInfoModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeFeedbackInfo();
+                }
+            });
+            
+            // 检测移动设备并进行额外优化
+            function checkMobile() {
+                if (window.innerWidth <= 767) {
+                    // 移动设备上优化游戏容器高度
+                    const gameContainer = document.querySelector('.game-container');
+                    if (gameContainer) {
+                        const windowHeight = window.innerHeight;
+                        const maxHeight = Math.min(windowHeight * 0.5, 450); // 最大高度不超过屏幕的50%
+                        gameContainer.style.maxHeight = maxHeight + 'px';
+                    }
+                }
+            }
+            
+            // 页面加载和调整大小时执行
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+            
+            // 优化iframe加载
+            const gameFrame = document.getElementById('gameFrame');
+            if (gameFrame) {
+                gameFrame.src = "https://cloud.onlinegames.io/games/2025/unity/nuts-and-bolts-puzzle/index-og.html";
+            }
+        });
+    </script>
+
+    <!-- 更新分享&收藏功能 -->
+    <script>
         // 简化分享功能，直接复制主域名
         function shareGame(platform) {
             if (platform === 'copy') {
@@ -1020,72 +1245,71 @@
                         })
                         .catch(err => {
                             // 如果clipboard API失败，尝试备用方法
-                            fallbackCopy(gameUrl);
+                            fallbackCopyLink(gameUrl);
                         });
                 } catch (err) {
                     // 对于不支持clipboard API的浏览器，使用备用方法
-                    fallbackCopy(gameUrl);
+                    fallbackCopyLink(gameUrl);
                 }
             }
         }
         
-        // 显示复制成功消息
+        // 显示链接复制成功消息
         function showCopySuccess() {
             const copyAlert = document.getElementById('copyAlert');
-            copyAlert.textContent = 'Website link copied!';
+            copyAlert.textContent = 'Website link copied to clipboard!';
             copyAlert.style.backgroundColor = 'rgba(22, 163, 74, 0.9)';
             copyAlert.style.opacity = '1';
             setTimeout(() => {
                 copyAlert.style.opacity = '0';
             }, 2000);
         }
+        
+        // 网站链接备用复制方法
+        function fallbackCopyLink(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess();
+            } catch (err) {
+                console.error('Copy failed', err);
+                alert('Copy failed. Please manually copy: randgame.online');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // 显示收藏快捷键提示
+        function bookmarkGame() {
+            const bookmarkAlert = document.getElementById('bookmarkAlert');
+            
+            // 检测操作系统，显示对应快捷键
+            let shortcutText = '';
+            if (navigator.userAgent.indexOf('Mac') !== -1) {
+                shortcutText = 'Press Command+D to bookmark this page!';
+            } else {
+                shortcutText = 'Press Ctrl+D to bookmark this page!';
+            }
+            
+            bookmarkAlert.textContent = shortcutText;
+            bookmarkAlert.style.backgroundColor = 'rgba(37, 99, 235, 0.9)';
+            bookmarkAlert.style.opacity = '1';
+            setTimeout(() => {
+                bookmarkAlert.style.opacity = '0';
+            }, 3000);
+        }
     </script>
 
-    <!-- 添加游戏加载逻辑 -->
-    <script>
-        // 改进游戏加载函数，直接嵌入iframe而不是动态创建
-        document.addEventListener('DOMContentLoaded', function() {
-            // 获取游戏容器
-            const gameContainer = document.querySelector('.game-container');
-            if (!gameContainer) return;
-            
-            // 清空容器内容
-            gameContainer.innerHTML = '';
-            
-            // 直接创建iframe元素
-            const gameFrame = document.createElement('iframe');
-            gameFrame.id = 'gameFrame';
-            gameFrame.src = "https://cloud.onlinegames.io/games/2025/unity/nuts-and-bolts-puzzle/index-og.html";
-            gameFrame.style.width = '100%';
-            gameFrame.style.height = '100%';
-            gameFrame.style.border = 'none';
-            gameFrame.style.borderRadius = '12px';
-            gameFrame.style.backgroundColor = '#0f0f1e';
-            gameFrame.setAttribute('allowfullscreen', 'true');
-            gameFrame.setAttribute('allow', 'autoplay; fullscreen');
-            gameFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation');
-            
-            // 添加iframe到容器
-            gameContainer.appendChild(gameFrame);
-            
-            // 移除旧的加载函数
-            if (window.loadGame) {
-                window.loadGame = function() { 
-                    console.log("Loading function replaced");
-                };
-            }
-        });
-    </script>
-
-    <!-- 修改顶部描述，使其更简洁 -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 更新页面内容，使用更简洁的描述
-            const subtitle = document.querySelector('.header-subtitle');
-            if (subtitle) {
-                subtitle.textContent = "Unscrew, strategize, and watch the planks fall in this thrilling puzzle game!";
-            }
-        });
-    </script>
+    <!-- 添加成功提示 -->
+    <div id="bookmarkAlert" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg opacity-0 transition-opacity duration-300 z-50">
+        Press Ctrl+D to bookmark this page!
+    </div>
 </body>
 </html>
